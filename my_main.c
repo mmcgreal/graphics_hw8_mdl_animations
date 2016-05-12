@@ -82,24 +82,31 @@
   jdyrlandweaver
   ====================*/
 void first_pass() {
+	int if_basename = 0;
+	int if_frames = 0;
+	int if_vary = 0;
+	//I think that we need something here that like says "HELLO CASE STATEMENTS ARE COMING"
 	//New Things by Emma
+	switch (op[i].opcode) {
       	case BASENAME:
 			basename = op[i].op.basename.p;
-
+			if_basename = 1;
       	case FRAMES:
       		num_frames = op[i].op.frames.num_frames;
-
+      		if_frames = 1;
       	case VARY:
-      	    vary_node.name = op[i].op.vary.p;
-		    op[i].op.vary.start_frame;
-		    op[i].op.vary.end_frame;
-		    op[i].op.vary.start_val;
-		    op[i].op.vary.end_val;
+      		if_vary = 1;
+    }
+    if (if_vary && !if_frames){
+    	exit(0);
+    }
+    else if(if_frames && !if_basename){
+    	basename = "default";
+    	printf("We have set your basename to ~default~ \nbecause you didn't set one yourself!\n");
+    }
 
 
       	//End of New Things by Emma
-
-
 }
 
 /*======== struct vary_node ** second_pass()) ==========
