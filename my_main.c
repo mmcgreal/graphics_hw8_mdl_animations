@@ -82,16 +82,19 @@
   jdyrlandweaver
   ====================*/
 void first_pass() {
+  printf("beginning of first pass\n");
 	int if_basename = 0;
 	int if_frames = 0;
 	int if_vary = 0;
+  int i=0;
 	
 	//I think that we need something here that like says "HELLO CASE STATEMENTS ARE COMING"
 	//Update: I think that is switch
 	//New Things by Emma
+  for (; i<lastop; i++) {
 	switch (op[i].opcode) {
       	case BASENAME:
-			basename = op[i].op.basename.p;
+      strcpy(name,op[i].op.basename.p->name);
 			if_basename = 1;
       	case FRAMES:
       		num_frames = op[i].op.frames.num_frames;
@@ -99,16 +102,16 @@ void first_pass() {
       	case VARY:
       		if_vary = 1;
     }
+  }
     if (if_vary && !if_frames){
     	exit(0);
     }
     else if(if_frames && !if_basename){
-    	basename = "default";
+    	strcpy(name,"default");
     	printf("We have set your basename to ~default~ \nbecause you didn't set one yourself!\n");
     }
-
-
       	//End of New Things by Emma
+
 }
 
 /*======== struct vary_node ** second_pass()) ==========
@@ -133,11 +136,32 @@ void first_pass() {
   05/17/12 09:29:31
   jdyrlandweaver
   ====================*/
-struct vary_node ** second_pass() {
-	switch (op[i].opcode) {
-		case VARY:
-      		//Things about knobs
-	}
+struct vary_node ** second_pass(int frames) { //knobs
+  struct vary_node ** knobs;
+  knobs = (struct vary_node **)malloc(sizeof(struct vary_node*)*num_frames);
+  int i,j;
+
+  for (i=0; i<frames; i++)
+    knobs[i]=0;
+  for (i=0; i<lastop; i++) {
+    if (op[i].opcode == VARY){
+      int frame_num=op[i].op.vary.end_frame-op[i].op.vary.start_frame;
+      double start=op[i].op.vary.start_val;
+      double inc=(op[i].op.vary.end_val-start)/frame_num;
+      for (j=0; j<frames; j++){
+  struct vary_node * new_node;
+  new_node = (struct vary_node*)malloc(sizeof(struct vary_node));
+  if(j > op[i].op.vary.start_frame && j<=op[i].op.vary.end_frame)
+    start+=inc;
+  new_node->value=start;
+  strcpy(new_node->name,op[i].op.vary.p->name);
+  new_node->next=knobs[j];
+  knobs[j]=new_node;
+      }
+    }
+  }
+  print_knobs();
+  return knobs;
 }
 
 
