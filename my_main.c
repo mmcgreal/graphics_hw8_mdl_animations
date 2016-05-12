@@ -82,6 +82,24 @@
   jdyrlandweaver
   ====================*/
 void first_pass() {
+	//New Things by Emma
+      	case BASENAME:
+			basename = op[i].op.basename.p;
+
+      	case FRAMES:
+      		num_frames = op[i].op.frames.num_frames;
+
+      	case VARY:
+      	    vary_node.name = op[i].op.vary.p;
+		    op[i].op.vary.start_frame;
+		    op[i].op.vary.end_frame;
+		    op[i].op.vary.start_val;
+		    op[i].op.vary.end_val;
+
+
+      	//End of New Things by Emma
+
+
 }
 
 /*======== struct vary_node ** second_pass()) ==========
@@ -183,7 +201,8 @@ void my_main( int polygons ) {
 
   num_frames = 1;
   step = 5;
- 
+  char* basename; 
+
   g.red = 0;
   g.green = 255;
   g.blue = 255;
