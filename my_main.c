@@ -85,7 +85,9 @@ void first_pass() {
 	int if_basename = 0;
 	int if_frames = 0;
 	int if_vary = 0;
+	
 	//I think that we need something here that like says "HELLO CASE STATEMENTS ARE COMING"
+	//Update: I think that is switch
 	//New Things by Emma
 	switch (op[i].opcode) {
       	case BASENAME:
@@ -132,6 +134,10 @@ void first_pass() {
   jdyrlandweaver
   ====================*/
 struct vary_node ** second_pass() {
+	switch (op[i].opcode) {
+		case VARY:
+      		//Things about knobs
+	}
 }
 
 
