@@ -81,37 +81,52 @@
 
   jdyrlandweaver
   ====================*/
-void first_pass() {
+void first_pass(int *num_frames,char *name) {
   printf("beginning of first pass\n");
-	int if_basename = 0;
+
+  int if_basename = 0;
 	int if_frames = 0;
 	int if_vary = 0;
   int i=0;
-	
+
 	//I think that we need something here that like says "HELLO CASE STATEMENTS ARE COMING"
-	//Update: I think that is switch
-	//New Things by Emma
+	//Update: I think that is switch -emma
   for (; i<lastop; i++) {
 	switch (op[i].opcode) {
       	case BASENAME:
+        if (if_basename==0){
       strcpy(name,op[i].op.basename.p->name);
 			if_basename = 1;
+        }
       	case FRAMES:
-      		num_frames = op[i].op.frames.num_frames;
+        if (if_frames==0){
+      		*num_frames = (int)op[i].op.frames.num_frames; //from double to *int
       		if_frames = 1;
+        }
       	case VARY:
-      		if_vary = 1;
+      		if_vary += 1;
+          if (op[i].op.vary.start_frame < 0){
+              printf("You're using VARY with negative frames...\n\tPlease don't use negative frames\n");
+              exit(0);
+            }
+          if (op[i].op.vary.end_frame < 0){
+              printf("You're using VARY after the last frame...\n\tPlease don't go beyond last frame\n");
+              exit(0);
+          }
+          if (op[i].op.vary.start_frame > op[i].op.vary.end_frame){
+              printf("You're giving VARY frames in decreasing order...\n\tPlease put your frames in numerical order\n");
+              exit(0);
+          }
     }
   }
     if (if_vary && !if_frames){
+      printf("You're using VARY without a total number of frames set...\n\tPlease set the total number of frames\n");
     	exit(0);
     }
     else if(if_frames && !if_basename){
     	strcpy(name,"default");
     	printf("We have set your basename to ~default~ \nbecause you didn't set one yourself!\n");
     }
-      	//End of New Things by Emma
-
 }
 
 /*======== struct vary_node ** second_pass()) ==========
@@ -232,18 +247,37 @@ void my_main( int polygons ) {
   screen t;
   color g;
 
+  double factor;
   struct vary_node **knobs;
-  struct vary_node *vn;
+  //struct vary_node *vn;
   char frame_name[128];
 
   num_frames = 1;
   step = 5;
-  char* basename; 
+  int is_anim=0;
+ // char* basename; //not used
 
   g.red = 0;
   g.green = 255;
   g.blue = 255;
 
+  first_pass(&num_frames,frame_name);
+  if (num_frames!=1)
+    is_anim=1;
+  knobs=second_pass(num_frames);
+  struct vary_node * current;
+  j=0;
+  while(j<num_frames){
+    tmp=new_matrix(4,4);
+    struct stack *s=new_stack();
+    if (is_anim){
+      current=knobs[j];
+      while (current->next){
+  set_value(lookup_symbol(current->name),current->value);
+  current=current->next;
+      }
+      set_value(lookup_symbol(current->name),current->value);
+    }
     
     for (i=0;i<lastop;i++) {
   
@@ -297,47 +331,68 @@ void my_main( int polygons ) {
 	break;
 
       case MOVE:
-	//get the factors
-	xval = op[i].op.move.d[0];
-	yval =  op[i].op.move.d[1];
-	zval = op[i].op.move.d[2];
-      
-	transform = make_translate( xval, yval, zval );
-	//multiply by the existing origin
-	matrix_mult( s->data[ s->top ], transform );
-	//put the new matrix on the top
-	copy_matrix( transform, s->data[ s->top ] );
-	free_matrix( transform );
-	break;
+  //get the factor
+      //set factor if needed
+  if (op[i].op.move.p)
+    factor=op[i].op.move.p->s.value;
+  else
+    factor=1;
+  if (factor!=0){
+    xval = op[i].op.move.d[0]*factor;
+    yval =  op[i].op.move.d[1]*factor;
+    zval = op[i].op.move.d[2]*factor;
+
+    transform = make_translate( xval, yval, zval );
+    //multiply by the existing origin
+    matrix_mult( s->data[ s->top ], transform );
+    //put the new matrix on the top
+    copy_matrix( transform, s->data[ s->top ] );
+    free_matrix( transform );
+  }
+  break;
 
       case SCALE:
-	xval = op[i].op.scale.d[0];
-	yval = op[i].op.scale.d[1];
-	zval = op[i].op.scale.d[2];
+      //set factor if needed
+  if (op[i].op.scale.p)
+    factor=op[i].op.scale.p->s.value;
+  else
+    factor=1;
+  if (factor!=0){
+    xval = op[i].op.scale.d[0]*factor;
+    yval = op[i].op.scale.d[1]*factor;
+    zval = op[i].op.scale.d[2]*factor;
       
-	transform = make_scale( xval, yval, zval );
-	matrix_mult( s->data[ s->top ], transform );
-	//put the new matrix on the top
-	copy_matrix( transform, s->data[ s->top ] );
-	free_matrix( transform );
-	break;
+    transform = make_scale( xval, yval, zval );
+    matrix_mult( s->data[ s->top ], transform );
+    //put the new matrix on the top
+    copy_matrix( transform, s->data[ s->top ] );
+    free_matrix( transform );
+  }
+  break;
 
       case ROTATE:
-	xval = op[i].op.rotate.degrees * ( M_PI / 180 );
+      //set factor if needed
+  if (op[i].op.rotate.p)
+    factor=op[i].op.rotate.p->s.value;
+  else
+    factor=1;
+  if (factor!=0){
+    xval = op[i].op.rotate.degrees * ( M_PI / 180 )*factor;
 
-	//get the axis
-	if ( op[i].op.rotate.axis == 0 ) 
-	  transform = make_rotX( xval );
-	else if ( op[i].op.rotate.axis == 1 ) 
-	  transform = make_rotY( xval );
-	else if ( op[i].op.rotate.axis == 2 ) 
-	  transform = make_rotZ( xval );
+    //get the axis
+    if ( op[i].op.rotate.axis == 0 ) 
+      transform = make_rotX( xval );
+    else if ( op[i].op.rotate.axis == 1 ) 
+      transform = make_rotY( xval );
+    else if ( op[i].op.rotate.axis == 2 ) 
+      transform = make_rotZ( xval );
 
-	matrix_mult( s->data[ s->top ], transform );
-	//put the new matrix on the top
-	copy_matrix( transform, s->data[ s->top ] );
-	free_matrix( transform );
-	break;
+    matrix_mult( s->data[ s->top ], transform );
+    //put the new matrix on the top
+    copy_matrix( transform, s->data[ s->top ] );
+    free_matrix( transform );
+  }
+  break;
 
       case PUSH:
 	push( s );
@@ -353,8 +408,25 @@ void my_main( int polygons ) {
 	break;
       }
     }
+    if (is_anim){ //printing correct names for anim pics
+      print_knobs();
+      char * name[150];
+      printf("frame num: %d\n",j);
+      printf("name: %s\n",frame_name);
+      if (num_frames<10)
+  sprintf(name,"anim/%s%0d.png",frame_name,j);
+      else if (10<num_frames<100)
+  sprintf(name,"anim/%s%03d.png",frame_name,j);
+      else if (100<num_frames<1000)
+  sprintf(name,"anim/%s%04d.png",frame_name,j);
+      printf("Saving %s\n\n",name);
+      save_extension(t,name);
+      clear_screen(t);
+    }
   
     free_stack( s );
     free_matrix( tmp );
+    j++;
+  }
     //free_matrix( transform );
 }
