@@ -1,4 +1,4 @@
-/*========== my_main.c ==========
+		/*========== my_main.c ==========
 
   This is the only file you need to modify in order
   to get a working mdl project (for now).
@@ -245,6 +245,7 @@ void my_main( int polygons ) {
   struct matrix *tmp;
   struct stack *s;
   screen t;
+  clear_screen(t);
   color g;
 
   double factor;
